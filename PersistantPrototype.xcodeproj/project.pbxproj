@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		175978861F69E93F00009373 /* HSCNotificationHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 175978851F69E93F00009373 /* HSCNotificationHandler.swift */; };
+		1790FD831F69A2F100581E4E /* ExceptionCatcher.m in Sources */ = {isa = PBXBuildFile; fileRef = 1790FD821F69A2F100581E4E /* ExceptionCatcher.m */; };
 		17AACB091F683B4100E2C5B3 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AACB081F683B4100E2C5B3 /* AppDelegate.swift */; };
 		17AACB0B1F683B4100E2C5B3 /* ViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 17AACB0A1F683B4100E2C5B3 /* ViewController.swift */; };
 		17AACB0E1F683B4100E2C5B3 /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 17AACB0C1F683B4100E2C5B3 /* Main.storyboard */; };
@@ -16,6 +18,10 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		175978851F69E93F00009373 /* HSCNotificationHandler.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = HSCNotificationHandler.swift; sourceTree = "<group>"; };
+		1790FD801F69A2F000581E4E /* PersistantPrototype-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "PersistantPrototype-Bridging-Header.h"; sourceTree = "<group>"; };
+		1790FD811F69A2F100581E4E /* ExceptionCatcher.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ExceptionCatcher.h; path = PersistantPrototype/ExceptionCatcher.h; sourceTree = "<group>"; };
+		1790FD821F69A2F100581E4E /* ExceptionCatcher.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = ExceptionCatcher.m; path = PersistantPrototype/ExceptionCatcher.m; sourceTree = "<group>"; };
 		17AACB051F683B4100E2C5B3 /* PersistantPrototype.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = PersistantPrototype.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		17AACB081F683B4100E2C5B3 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		17AACB0A1F683B4100E2C5B3 /* ViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewController.swift; sourceTree = "<group>"; };
@@ -37,10 +43,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		1790FD841F69A2FB00581E4E /* Utility */ = {
+			isa = PBXGroup;
+			children = (
+				1790FD801F69A2F000581E4E /* PersistantPrototype-Bridging-Header.h */,
+				1790FD821F69A2F100581E4E /* ExceptionCatcher.m */,
+				1790FD811F69A2F100581E4E /* ExceptionCatcher.h */,
+			);
+			name = Utility;
+			sourceTree = "<group>";
+		};
 		17AACAFC1F683B4100E2C5B3 = {
 			isa = PBXGroup;
 			children = (
 				17AACB071F683B4100E2C5B3 /* PersistantPrototype */,
+				1790FD841F69A2FB00581E4E /* Utility */,
 				17AACB061F683B4100E2C5B3 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -63,6 +80,7 @@
 				17AACB141F683B4100E2C5B3 /* LaunchScreen.storyboard */,
 				17AACB171F683B4100E2C5B3 /* Info.plist */,
 				17AACB0F1F683B4100E2C5B3 /* PersistantPrototype.xcdatamodeld */,
+				175978851F69E93F00009373 /* HSCNotificationHandler.swift */,
 			);
 			path = PersistantPrototype;
 			sourceTree = "<group>";
@@ -100,6 +118,7 @@
 					17AACB041F683B4100E2C5B3 = {
 						CreatedOnToolsVersion = 8.3.3;
 						DevelopmentTeam = YFU5ASABV5;
+						LastSwiftMigration = 0830;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -140,8 +159,10 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				17AACB0B1F683B4100E2C5B3 /* ViewController.swift in Sources */,
 				17AACB111F683B4100E2C5B3 /* PersistantPrototype.xcdatamodeld in Sources */,
+				17AACB0B1F683B4100E2C5B3 /* ViewController.swift in Sources */,
+				1790FD831F69A2F100581E4E /* ExceptionCatcher.m in Sources */,
+				175978861F69E93F00009373 /* HSCNotificationHandler.swift in Sources */,
 				17AACB091F683B4100E2C5B3 /* AppDelegate.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -267,11 +288,14 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				DEVELOPMENT_TEAM = YFU5ASABV5;
 				INFOPLIST_FILE = PersistantPrototype/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.protoco.PersistantPrototype;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "PersistantPrototype-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Debug;
@@ -280,11 +304,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				DEVELOPMENT_TEAM = YFU5ASABV5;
 				INFOPLIST_FILE = PersistantPrototype/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.protoco.PersistantPrototype;
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_OBJC_BRIDGING_HEADER = "PersistantPrototype-Bridging-Header.h";
 				SWIFT_VERSION = 3.0;
 			};
 			name = Release;
@@ -308,6 +334,7 @@
 				17AACB1C1F683B4100E2C5B3 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 
