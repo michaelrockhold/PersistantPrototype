@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
 
-        notificationHandler = HSCNotificationHandler()
+        notificationHandler = HSCNotificationHandler(targetRoot: self)
         return true
     }
 
@@ -45,4 +45,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         // Saves changes in the application's managed object context before the application terminates.
         notificationHandler!.saveContext()
     }
+
+    lazy var viewController: ViewController = {
+        return self.window!.rootViewController! as! ViewController
+    }()
 }

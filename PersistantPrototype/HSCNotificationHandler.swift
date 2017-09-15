@@ -13,18 +13,21 @@ import UserNotifications
 class HSCNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
 
     let notificationCenter = UNUserNotificationCenter.current()
+    let targetRoot: NSObject
     let dateFormatter: DateFormatter
 
-    override init() {
+    init(targetRoot: NSObject) {
 
-        notificationCenter.requestAuthorization(options: [.alert, .sound]) { (granted, error) in
-            // just assume it's all good
-        }
+        self.targetRoot = targetRoot
 
         dateFormatter = DateFormatter()
         dateFormatter.dateFormat = "HH:mm:ss"
 
         super.init()
+
+        notificationCenter.requestAuthorization(options: [.alert, .sound]) { (granted, error) in
+            // just assume it's all good
+        }
 
         notificationCenter.delegate = self
 
@@ -36,94 +39,113 @@ class HSCNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
         NotificationCenter.default.post(name:Notification.Name("NewMessageNotification"), object:nil, userInfo:["msg":msg])
     }
 
-    func doStartNewTimer(_ sender: Any, length: TimeInterval) {
+    func makeNewTimer(fireDate: Date, keyPath: String, selector: String) throws -> HSCTimer {
 
-        let foo = NSEntityDescription.insertNewObject(forEntityName: "Foo", into: context)
-        let prospectiveDueDate = Date().addingTimeInterval(length)
-        foo.setValue(prospectiveDueDate, forKey: "timestamp")
-        context.performAndWait {
-            do {
-                try self.context.save()
-            }
-            catch {
-                self.displayMsg("\(error)")
-                return
-            }
+        var returnTimer: HSCTimer? = nil
+
+        try self.doInContext { (context, coordinator) in
+            let timer = NSEntityDescription.insertNewObject(forEntityName: "HSCTimer", into: context) as! HSCTimer
+            timer.fireDate = fireDate as NSDate
+            timer.keyPath = keyPath
+            timer.selector = selector
+            try context.save()
+            returnTimer = timer
         }
 
-        restartTimer(remainingInterval: length, taskObject: foo)
+        return returnTimer!
+    }
+
+    func doStartNewTimer(_ sender: Any, length: TimeInterval, keyPath: String, selector: String) {
+
+        do {
+            let timer = try makeNewTimer(fireDate: Date().addingTimeInterval(length), keyPath: keyPath, selector: selector)
+            restartTimer(remainingInterval: length, timer: timer)
+        }
+        catch {
+            self.displayMsg("\(error)")
+        }
+    }
+
+    func fire(timer: HSCTimer, late: Bool = false) {
+        if let target = targetRoot.value(forKeyPath: timer.keyPath!) as! NSObject? {
+            target.perform(Selector(timer.selector!), with: timer)
+        }
+
+        cleanupTask(timer)
     }
 
 
-    func cleanupTask(_ taskObject: NSManagedObject) {
+    func cleanupTask(_ timer: HSCTimer) {
         do {
-            self.context.delete(taskObject)
-            try self.context.save()
+            try self.doInContext { (context, coordinator) in
+                context.delete(timer)
+                try context.save()
+            }
         } catch {
             displayMsg("failure deleting task object with \(error)")
         }
     }
 
-    func restartTimer(remainingInterval: TimeInterval, taskObject: NSManagedObject) {
+    func restartTimer(remainingInterval: TimeInterval, timer: HSCTimer) {
 
         let prospectiveDueDate = Date().addingTimeInterval(remainingInterval)
-        let timerName = taskObject.objectID.uriRepresentation()
-        displayMsg("Fire at at \(dateFormatter.string(from:prospectiveDueDate)): \(timerName)")
+        let timerName = timer.objectID.uriRepresentation()
+        displayMsg("Fire at at \(dateFormatter.string(from:prospectiveDueDate)): \(timerName.lastPathComponent)")
 
         let content = UNMutableNotificationContent()
         content.title = "Hestan Cue"
         content.subtitle = "Timer"
         content.body = "\(timerName) has gone off."
         content.sound = UNNotificationSound.default()
-        content.userInfo = ["Foo" : taskObject.objectID.uriRepresentation().absoluteString]
+        content.userInfo = ["URI" : timer.objectID.uriRepresentation().absoluteString]
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: remainingInterval, repeats: false)
         let request = UNNotificationRequest(identifier: timerName.absoluteString, content: content, trigger: trigger)
 
-        notificationCenter.add(request) { error in
-            self.displayMsg("Queuing: error == \(error)")
-        }
+        notificationCenter.add(request, withCompletionHandler: nil)
     }
 
     enum ResolveObjectError: Error {
         case misc(String)
     }
 
-    func getFooForIDString(objectURIString: String) throws -> NSManagedObject {
+    func getTimerForIDString(objectURIString: String) throws -> HSCTimer {
+
         guard let url = URL(string: objectURIString) else {
-            throw ResolveObjectError.misc("[URL error]")
+            throw ResolveObjectError.misc("ID string is not a URI")
         }
-        var objectID: NSManagedObjectID?
-        try ExceptionCatcher.catchException {
-            objectID = self.context.persistentStoreCoordinator?.managedObjectID(forURIRepresentation: url)
+
+        var timer: HSCTimer? = nil
+        try self.doInContext { (context, coordinator) in
+            var objectID: NSManagedObjectID? = nil
+            try ExceptionCatcher.catchException {
+                objectID = coordinator.managedObjectID(forURIRepresentation: url)
+            }
+            timer = try context.existingObject(with: objectID!) as? HSCTimer
         }
-        return try context.existingObject(with: objectID!)
+        return timer!
     }
 
-    func checkForDoneness(object: NSManagedObject) {
+    func checkForDoneness(timer: HSCTimer) {
 
-        let timerName = object.objectID.uriRepresentation()
-        let fireDate = object.value(forKey: "timestamp") as! Date
+        let fireDate = timer.fireDate! as Date
         switch fireDate.compare(Date()) {
+
         case .orderedSame:
-            displayMsg("Firing now at \(dateFormatter.string(from: Date())): \(timerName)")
-            cleanupTask(object)
+            fire(timer: timer)
 
         case .orderedAscending:
-            displayMsg("? Fired \(dateFormatter.string(from: fireDate)): \(timerName)")
-            cleanupTask(object)
+            fire(timer: timer, late: true)
 
         case .orderedDescending:
-            let remaining = fireDate.timeIntervalSince(Date())
-            restartTimer(remainingInterval: remaining, taskObject: object)
+            restartTimer(remainingInterval: fireDate.timeIntervalSince(Date()), timer: timer)
         }
     }
 
     func didGetNotification(objectURIString: String) {
 
-        //sleep(1000);
         do {
-            let object = try self.getFooForIDString(objectURIString: objectURIString)
-            checkForDoneness(object: object)
+            let timer = try self.getTimerForIDString(objectURIString: objectURIString)
+            checkForDoneness(timer: timer)
         } catch {
             displayMsg("!failing handling notif with \(error)")
         }
@@ -131,12 +153,6 @@ class HSCNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
 
 
     // MARK: - Core Data stack
-
-    var context: NSManagedObjectContext {
-        get {
-            return persistentContainer.viewContext
-        }
-    }
 
     lazy var persistentContainer: NSPersistentContainer = {
         /*
@@ -181,36 +197,38 @@ class HSCNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    func doInContext(_ block: @escaping (_ context: NSManagedObjectContext, _ coordinator: NSPersistentStoreCoordinator) throws -> Void) throws {
+        var blockError: Error? = nil
+        persistentContainer.viewContext.performAndWait {
+            do {
+                try block(self.persistentContainer.viewContext, self.persistentContainer.persistentStoreCoordinator)
+            } catch {
+                blockError = error
+            }
+        }
+        if blockError != nil {
+            throw blockError!
+        }
+    }
+
     func doForceRefresh() {
 
-        let fetcher: NSFetchRequest<Foo> = Foo.fetchRequest()
         do {
-            fetcher.returnsObjectsAsFaults = false
-            var foos: [NSManagedObject]?
-            var fetchError: Error?
-            self.context.performAndWait {
-                do {
-                    foos = try fetcher.execute()
-                } catch {
-                    fetchError = error
-                }
-            }
-            if fetchError != nil {
-                throw fetchError!
-            }
+            try self.doInContext { (context, coordinator) in
+                let fetcher: NSFetchRequest<HSCTimer> = HSCTimer.fetchRequest()
+                fetcher.returnsObjectsAsFaults = false
 
-            if foos != nil {
-
-                if foos!.count > 0 {
-                    for foo in foos! {
-                        checkForDoneness(object: foo)
+                let timers = try fetcher.execute() as [HSCTimer]?
+                if timers != nil && timers!.count > 0 {
+                    for timer in timers! {
+                        self.checkForDoneness(timer: timer)
                     }
                 } else {
-                    displayMsg("no outstanding tasks")
+                    self.displayMsg("no outstanding tasks")
                 }
             }
         } catch {
-            displayMsg("failing to get and check with \(error)")
+            self.displayMsg("error fetching: \(error)")
         }
     }
 
@@ -220,9 +238,11 @@ class HSCNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
                                 didReceive response: UNNotificationResponse,
                                 withCompletionHandler completionHandler: @escaping () -> Void) {
 
+        // This is the method called if the app was not frontmost when the local notification was triggered.
+
         completionHandler()
 
-        if let objectURIStr = response.notification.request.content.userInfo["Foo"] as! String? {
+        if let objectURIStr = response.notification.request.content.userInfo["URI"] as! String? {
             didGetNotification(objectURIString: objectURIStr);
         }
     }
@@ -238,10 +258,9 @@ class HSCNotificationHandler: NSObject, UNUserNotificationCenterDelegate {
         // handler with different options depending on what kind it is.
 
         completionHandler([])
-        DispatchQueue.main.async {
-            if let objectURIStr = notification.request.content.userInfo["Foo"] as! String? {
-                self.didGetNotification(objectURIString: objectURIStr);
-            }
+        
+        if let objectURIStr = notification.request.content.userInfo["URI"] as! String? {
+            didGetNotification(objectURIString: objectURIStr);
         }
     }
 }
