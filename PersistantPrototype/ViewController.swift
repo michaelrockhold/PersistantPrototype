@@ -20,8 +20,8 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
         return df
     }()
 
-    lazy var notificationHandler: HSCNotificationHandler = {
-        return (UIApplication.shared.delegate as! AppDelegate).notificationHandler!
+    lazy var notificationHandler: HSCNotificationHandler? = {
+        return (UIApplication.shared.delegate as! AppDelegate?)?.notificationHandler!
     }()
 
     var messages: [String] = []
@@ -63,15 +63,15 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
     }
 
     @IBAction func doStartNewShortTimer(_ sender: Any) {
-        notificationHandler.doStartNewTimer(sender, length: 3, keyPath: "viewController", selector: "displayTimerFire:")
+        _ = notificationHandler!.doStartNewTimer(sender, interval: 3, keyPath: "viewController", selector: "displayTimerFire:")
     }
 
     @IBAction func doStartNewLongTimer(_ sender: Any) {
-        notificationHandler.doStartNewTimer(sender, length: 30, keyPath: "viewController", selector: "displayTimerFire:")
+        _ = notificationHandler!.doStartNewTimer(sender, interval: 30, keyPath: "viewController", selector: "displayTimerFire:")
     }
 
     @IBAction func doStartNewVeryLongTimer(_ sender: Any) {
-        notificationHandler.doStartNewTimer(sender, length: 90, keyPath: "viewController", selector: "displayTimerFire:")
+        _ = notificationHandler!.doStartNewTimer(sender, interval: 90, keyPath: "viewController", selector: "displayTimerFire:")
     }
 
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {

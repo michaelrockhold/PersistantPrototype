@@ -18,7 +18,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
 
-        notificationHandler = HSCNotificationHandler(targetRoot: self)
+        notificationHandler = HSCNotificationHandler(targetRoot: self, persistentContainerName: "PersistantPrototype")
         return true
     }
 
